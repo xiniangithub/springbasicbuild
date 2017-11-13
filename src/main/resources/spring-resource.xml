@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- 开启控制反转注解的支持 -->
+    <context:component-scan base-package="com.wez.springbasicbuild">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+    </context:component-scan>
+
+    <!-- 加载数据库配置文件 -->
+    <context:property-placeholder location="classpath:jdbc.properties" file-encoding="utf-8" />
+
+    <!-- 配置数据源 -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${mysql.driverClassName}"></property>
+        <property name="url" value="${mysql.url}"></property>
+        <property name="username" value="${mysql.username}"></property>
+        <property name="password" value="${mysql.password}"></property>
+        <property name="maxActive" value="${maxActive}"></property>
+        <property name="maxWait" value="${maxWait}"></property>
+    </bean>
+
+    <!-- 配置事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!-- MyBatis与Springmvc整合 -->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 配置数据源（也可以在mybatis配置文件中配置） -->
+        <property name="dataSource" ref="dataSource" />
+        <!-- 配置mybatis配置文件（没有可以不用配置） -->
+        <property name="configLocation" value="classpath:mybatis-config.xml" />
+        <!-- 整合mybatis的映射文件 -->
+        <property name="mapperLocations" value="classpath:com/wez/**/mapper/*.xml" />
+    </bean>
+
+    <!-- 扫描映射接口 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!-- 扫描的包 -->
+        <property name="basePackage" value="com.wez.springbasicbuild.dao" />
+        <!--
+			注入SqlSessionFactory
+			name的值要使用sqlSessionFactoryBeanName，不能使用sqlSessionFactory，因为使用sqlSessionFactory导致Spring和mybatis整合后，加载配置文件的顺序不太一样，会导致Spring解析properties文件的bean不起作用，也就是导致数据源的注入不成功（我们这里加载数据源使用的配置文件），这是因为加载的顺序问题。（其实sqlSessionFactory已经了）
+         -->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory">
+        </property>
+    </bean>
+</beans>
